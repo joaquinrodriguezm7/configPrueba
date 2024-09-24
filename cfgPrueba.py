@@ -154,7 +154,7 @@ Sub AddCheckBoxes()
     ' Etiquetas para los checkboxes
     labels = Array("OP1", "OP2", "OP3", "OP4", "OP5")
     
-    ' Crear los checkboxes en el rango F2:F11
+    ' Crear los checkboxes en el rango F2:F11 
     For i = 2 To 11
         topPos = ws.Cells(i, 6).Top
         leftPos = ws.Cells(i, 6).Left
