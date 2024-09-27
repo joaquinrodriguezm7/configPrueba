@@ -10,8 +10,8 @@ def inicializar_hoja(ws):
         cell.value = f'Alumno{i-1}'
         cell.protection = Protection(locked=True)  # Proteger celdas A2:A11
 
-    # Escribir Pregunta1, Pregunta2, ..., Pregunta6 en las celdas B1 hasta F1 y protegerlas
-    for j in range(2, 8):
+    # Escribir Pregunta1, Pregunta2, ..., Pregunta8 en las celdas B1 hasta F1 y protegerlas
+    for j in range(2, 9):
         cell = ws.cell(row=1, column=j)
         cell.value = f'Pregunta{j-1}'
         cell.protection = Protection(locked=True)  # Proteger celdas B1:F1
@@ -82,8 +82,8 @@ def inicializar_hoja(ws):
     ws.add_data_validation(dv4)
     ws.add_data_validation(dv6)
 
-    # Desbloquear solo las celdas B2:G11 (Preguntas 1 a 6)
-    for row in ws_preguntas['B2:G11']:
+    # Desbloquear solo las celdas B2:H11 (Preguntas 1 a 6)
+    for row in ws_preguntas['B2:H11']:
         for cell in row:
             cell.protection = Protection(locked=False)
 
@@ -104,6 +104,7 @@ ws_preguntas.column_dimensions['F'].width = 36  # Ajustar ancho de columna F (Pr
 ws_respuestas = wb.create_sheet(title='Respuestas')
 inicializar_hoja(ws_respuestas)
 ws_respuestas.protection.sheet = True
+
 
 # Referenciar los datos de B2:E11 en la hoja 'Respuestas', pero dejando vacía si la celda original está vacía
 for i in range(2, 12):
@@ -126,6 +127,7 @@ for i in range(2, 12):
 
 # Crear la hoja de enlaces para CheckBoxes
 ws_datos = wb.create_sheet(title='Datos')
+ws_datos.sheet_state = 'veryHidden'
 
 # Guardar el archivo Excel
 file_path = r'C:\Users\joaquin.rodriguezm\Desktop\cfgPrueba.xlsx'
