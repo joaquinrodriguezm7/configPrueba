@@ -88,7 +88,7 @@ def inicializar_hoja(ws):
             cell.protection = Protection(locked=False)
 
     # Bloquear las demás celdas por defecto
-    ws.protection.sheet = True 
+    ws.protection.sheet = False 
 
 # Crear un archivo Excel
 wb = Workbook()
@@ -98,7 +98,8 @@ ws_preguntas = wb.active
 ws_preguntas.title = 'Preguntas'
 inicializar_hoja(ws_preguntas)
 
-ws_preguntas.column_dimensions['F'].width = 36  # Ajustar ancho de columna F (Pregunta 5)
+ws_preguntas.column_dimensions['F'].width = 40  # Ajustar ancho de columna F (Pregunta 5)
+ws_preguntas.column_dimensions['H'].width = 52.56  # Ajustar ancho de columna F (Pregunta 5)
 
 # Crear e inicializar una nueva hoja
 ws_respuestas = wb.create_sheet(title='Respuestas')
@@ -125,9 +126,15 @@ for i in range(2, 12):
     cell_dato = ws_preguntas.cell(row=i-1, column=11)  
     cell_respuesta.value = f"=Datos!K{i-1}"
 
-# Crear la hoja de enlaces para CheckBoxes
+# Crear la hoja de Datos
 ws_datos = wb.create_sheet(title='Datos')
-ws_datos.sheet_state = 'veryHidden'
+# ws_datos.sheet_state = 'veryHidden'
+for i in range(2, 12):
+        cell = ws_datos[f'M{i}']
+        cell.value = f'Alumno{i-1}'
+
+ws_datos['N1'] = 'Pregunta7'
+
 
 # Guardar el archivo Excel
 file_path = r'C:\Users\joaquin.rodriguezm\Desktop\cfgPrueba.xlsx'
@@ -151,7 +158,7 @@ Sub AddCheckBoxes()
     Dim topPos As Double
     Dim checkBoxWidth As Double
     Dim labels As Variant
-    checkBoxWidth = 40
+    checkBoxWidth = 45  ' Aumentar el ancho de espaciado
     
     ' Etiquetas para los checkboxes
     labels = Array("OP1", "OP2", "OP3", "OP4", "OP5")
@@ -163,11 +170,11 @@ Sub AddCheckBoxes()
         
         ' Crear CheckBoxes para cada celda en el rango
         For j = LBound(labels) To UBound(labels)
-            With ws.CheckBoxes.Add(leftPos + j * checkBoxWidth, topPos, 20, 15) ' Espaciado horizontal
+            With ws.CheckBoxes.Add(leftPos + j * checkBoxWidth, topPos, 20, 15) ' Ajustar el espaciado horizontal
                 .Caption = labels(j)  ' Texto al lado del checkbox
                 .Value = xlOff
                 
-                ' Establecer la celda de enlace en la hoja CheckBoxLinks
+                ' Establecer la celda de enlace en la hoja Datos
                 .LinkedCell = wsLinks.Cells(i - 1, j + 1).Address(External:=True)
             End With
         Next j
@@ -183,6 +190,95 @@ Sub AddCheckBoxes()
         wsLinks.Cells(i, 11).Formula = "=" & wsLinks.Cells(i, 6).Address & "&" & wsLinks.Cells(i, 7).Address & "&" & wsLinks.Cells(i, 8).Address & "&" & wsLinks.Cells(i, 9).Address & "&" & wsLinks.Cells(i, 10).Address
     Next i
 End Sub
+
+
+Sub CrearRadioButtonsEnRango()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim wsDatos As Worksheet
+    Set wsDatos = ThisWorkbook.Sheets("Datos")
+
+    ' Definir el rango H2:H11
+    Dim celda As Range, linkedCell As Range
+    For Each celda In ws.Range("H2:H11")
+
+        ' Determinar la celda vinculada en la hoja 'Datos'
+        Set linkedCell = wsDatos.Cells(celda.Row - 1 + 1, 14) ' N2 corresponde a la fila 2 y columna 14 (N)
+
+        ' Colocar texto en la celda actual
+        celda.Value = "VELOCIDAD" & Chr(10) & "" & Chr(10) & "PRECISION" & Chr(10) & "" & Chr(10) & "EXPRESION" & Chr(10) & ""
+
+        ' Ajustes de posicionamiento
+        Dim top_offset As Integer
+        Dim left_offset As Integer
+        top_offset = celda.Top + -11
+        left_offset = celda.Left + 55
+
+        ' Ajustes finos de las posiciones verticales para alineación con palabras
+        Dim posicionesY(1 To 3) As Integer
+        posicionesY(1) = top_offset + 13    ' Ajuste para VELOCIDAD
+        posicionesY(2) = top_offset + 43    ' Ajuste para PRECISION
+        posicionesY(3) = top_offset + 70    ' Ajuste para EXPRESION
+
+        ' Crear un GroupBox para VELOCIDAD
+        Dim groupBoxV As Object
+        Set groupBoxV = ws.GroupBoxes.Add(left_offset - 10, posicionesY(1) - 10, 250, 50)
+        groupBoxV.Caption = "VELOCIDAD"
+        groupBoxV.Visible = False ' Hacer el GroupBox invisible
+
+        ' Crear los radio buttons para VELOCIDAD
+        Dim j As Integer
+        For j = 1 To 4
+            Dim optButtonV As Object
+            Set optButtonV = ws.OptionButtons.Add(left_offset + ((j - 1) * 60), posicionesY(1), 60, 15)
+            Select Case j
+                Case 1: optButtonV.Caption = "NIVEL D": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
+                Case 2: optButtonV.Caption = "NIVEL C": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
+                Case 3: optButtonV.Caption = "NIVEL B": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
+                Case 4: optButtonV.Caption = "NIVEL A": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
+            End Select
+        Next j
+
+        ' Crear un GroupBox para PRECISIÓN
+        Dim groupBoxP As Object
+        Set groupBoxP = ws.GroupBoxes.Add(left_offset - 10, posicionesY(2) - 10, 150, 50)
+        groupBoxP.Caption = "PRECISIÓN"
+        groupBoxP.Visible = False ' Hacer el GroupBox invisible
+
+        ' Crear los radio buttons para PRECISION
+        For j = 1 To 2
+            Dim optButtonP As Object
+            Set optButtonP = ws.OptionButtons.Add(left_offset + ((j - 1) * 60), posicionesY(2), 60, 15)
+            Select Case j
+                Case 1: optButtonP.Caption = "NIVEL B": optButtonP.LinkedCell = linkedCell.Offset(0, 1).Address(External:=True)
+                Case 2: optButtonP.Caption = "NIVEL A": optButtonP.LinkedCell = linkedCell.Offset(0, 1).Address(External:=True)
+            End Select
+        Next j
+
+        ' Crear un GroupBox para EXPRESIÓN
+        Dim groupBoxE As Object
+        Set groupBoxE = ws.GroupBoxes.Add(left_offset - 10, posicionesY(3) - 10, 250, 50)
+        groupBoxE.Caption = "EXPRESIÓN"
+        groupBoxE.Visible = False ' Hacer el GroupBox invisible
+
+        ' Crear los radio buttons para EXPRESION
+        For j = 1 To 3
+            Dim optButtonE As Object
+            Set optButtonE = ws.OptionButtons.Add(left_offset + ((j - 1) * 60), posicionesY(3), 60, 15)
+            Select Case j
+                Case 1: optButtonE.Caption = "NIVEL D": optButtonE.LinkedCell = linkedCell.Offset(0, 2).Address(External:=True)
+                Case 2: optButtonE.Caption = "NIVEL B": optButtonE.LinkedCell = linkedCell.Offset(0, 2).Address(External:=True)
+                Case 3: optButtonE.Caption = "NIVEL A": optButtonE.LinkedCell = linkedCell.Offset(0, 2).Address(External:=True)
+            End Select
+        Next j
+
+    Next celda
+End Sub
+
+
+
+
+
 """
 
 # Agregar el código VBA al módulo
@@ -191,6 +287,7 @@ vba_module.CodeModule.AddFromString(vba_code)
 
 # Ejecutar la macro para agregar los checkboxes y establecer los vínculos
 wb.api.Application.Run("AddCheckBoxes")
+wb.api.Application.Run("CrearRadioButtonsEnRango")
 
 # Guardar y cerrar el archivo
 wb.save()
