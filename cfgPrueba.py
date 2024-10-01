@@ -126,6 +126,10 @@ for i in range(2, 12):
     cell_dato = ws_preguntas.cell(row=i-1, column=11)  
     cell_respuesta.value = f"=Datos!K{i-1}"
 
+# Referenciar los valores de T2:T11 en la hoja 'Datos' a H2:H11 en la hoja 'Respuestas'
+for row in range(2, 12):
+    ws_respuestas[f'H{row}'] = f'=Datos!T{row}'
+
 # Crear la hoja de Datos
 ws_datos = wb.create_sheet(title='Datos')
 # ws_datos.sheet_state = 'veryHidden'
@@ -134,7 +138,26 @@ for i in range(2, 12):
         cell.value = f'Alumno{i-1}'
 
 ws_datos['N1'] = 'Pregunta7'
+ws_datos['Q1'] = 'VELOCIDAD'
+ws_datos['R1'] = 'PRECISION'
+ws_datos['S1'] = 'EXPRESION'
 
+
+# Se define rango de filas para insertar fórmula para valores de los radio buttons
+# Para posteriormente concatenar los valores y que queden como una sola expresión
+
+for row in range(2, 12):
+    ws_datos[f'Q{row}'] = f'=IF(N{row}=1, "NIVEL D", IF(N{row}=2, "NIVEL C", IF(N{row}=3, "NIVEL B", IF(N{row}=4, "NIVEL A", ""))))'
+
+for row in range(2, 12): 
+    ws_datos[f'R{row}'] = f'=IF(O{row}=1, "NIVEL B", IF(O{row}=2, "NIVEL A", ""))'
+
+
+for row in range(2, 12):
+    ws_datos[f'S{row}'] = f'=IF(P{row}=1, "NIVEL D", IF(P{row}=2, "NIVEL B", IF(P{row}=3, "NIVEL A", "")))'
+
+for row in range(2, 12):
+    ws_datos[f'T{row}'] = f'=Q{row} & ";" & R{row} & ";" & S{row}'
 
 # Guardar el archivo Excel
 file_path = r'C:\Users\joaquin.rodriguezm\Desktop\cfgPrueba.xlsx'
@@ -144,7 +167,7 @@ wb.save(file_path)
 app = xw.App(visible=False) 
 wb = app.books.open(file_path)
 
-# Código VBA para agregar las casillas de verificación en el rango F2:F11 y vincularlas a celdas en la hoja Datos
+# Código VBA para checkboxes y radiobuttons
 vba_code = """
 Sub AddCheckBoxes()
     Dim ws As Worksheet
@@ -274,11 +297,6 @@ Sub CrearRadioButtonsEnRango()
 
     Next celda
 End Sub
-
-
-
-
-
 """
 
 # Agregar el código VBA al módulo
