@@ -1,0 +1,28 @@
+alumnos=01 Alumno1 21331095-K 0001DX, 02 Alumno2 9293293-1 0002DX
+preguntas=Pregunta1, Pregunta2, Pregunta3, Pregunta4, Pregunta5, Pregunta6, Pregunta7, Pregunta8
+
+rango1 = J2:J11
+rango2 = K2:K11
+
+palabra11 = VELOCIDAD
+btnPalabra11 = 4
+nivelesPalabra11 = ABCD
+
+palabra12 = PRECISION
+btnPalabra12 = 3
+nivelesPalabra12 = ABC
+
+palabra13 = EXPRESION
+btnPalabra13 = 2
+nivelesPalabra13 = AB
+
+palabra21 = VELOCIDAD
+btnPalabra21 = 2
+nivelesPalabra21 = DC
+
+palabra22 = PRECISION
+btnPalabra22 = 3
+nivelesPalabra22 = DCA
+
+
+

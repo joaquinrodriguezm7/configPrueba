@@ -5,18 +5,44 @@ import xlwings as xw
 from win32com.client import Dispatch
 import os
 
-def inicializar_hoja(ws):
-    # Escribir Alumno1, Alumno2, ..., Alumno9 en las celdas A2 hasta A11 y protegerlas
-    for i in range(2, 12):
-        cell = ws[f'A{i}']
-        cell.value = f'Alumno{i-1}'
-        cell.protection = Protection(locked=True)  # Proteger celdas A2:A11
+def leer_configuracion(archivo_config):
+    config = {}
+    with open(archivo_config, 'r') as f:
+        for linea in f:
+            if '=' in linea:
+                clave, valor = linea.strip().split('=')
+                config[clave.strip()] = valor.strip().split(', ')
+    return config
 
-    # Escribir Pregunta1, Pregunta2, ..., Pregunta8 en las celdas B1 hasta F1 y protegerlas
-    for j in range(2, 9):
-        cell = ws.cell(row=1, column=j)
-        cell.value = f'Pregunta{j-1}'
-        cell.protection = Protection(locked=True)  # Proteger celdas B1:F1
+def inicializar_hoja(ws, archivo_config):
+    # Leer el archivo de configuración
+    config = leer_configuracion(archivo_config)
+    
+    # Obtener los nombres de los alumnos y preguntas desde la configuración
+    alumnos = config.get('alumnos', [])
+    preguntas = config.get('preguntas', [])
+    
+    # Escribir alumnos en las celdas A2:A11 (número y nombre), B2:B11 (RUT), y C2:C11 (ID) y protegerlas
+    for i in range(2, 2 + len(alumnos)):
+        datos_alumno = alumnos[i-2].split(' ')  # Dividir por espacios para obtener las partes del alumno
+        
+        # Escribir número de lista y nombre en columna A
+        ws[f'A{i}'].value = f'{datos_alumno[0]} {datos_alumno[1]}'
+        ws[f'A{i}'].protection = Protection(locked=True)
+        
+        # Escribir RUT en columna B
+        ws[f'B{i}'].value = datos_alumno[2]
+        ws[f'B{i}'].protection = Protection(locked=True)
+        
+        # Escribir Identificador en columna C
+        ws[f'C{i}'].value = datos_alumno[3]
+        ws[f'C{i}'].protection = Protection(locked=True)
+
+    # Escribir preguntas en las celdas D1 hasta K1 (dependiendo del número de preguntas) y protegerlas
+    for j in range(4, 4 + len(preguntas)):  # Columnas D a K (columnas 4 a 11)
+        ws.cell(row=1, column=j).value = preguntas[j-4]
+        ws.cell(row=1, column=j).protection = Protection(locked=True)
+
 
     # Crear lógica para preguntas que acepten enteros y decimales, incluyendo negativos (P1)
     dv1 = DataValidation(type="decimal",
@@ -27,7 +53,7 @@ def inicializar_hoja(ws):
                         errorTitle="Entrada inválida",
                         error="Solo se permiten números enteros o decimales con separador ','")
 
-    for row in ws['B2:B11']:  # Solo para Pregunta 1 (Columna B)
+    for row in ws['D2:D11']:  # Solo para Pregunta 1 (Columna B)
         for cell in row:
             dv1.add(cell)
 
@@ -38,18 +64,18 @@ def inicializar_hoja(ws):
                         errorTitle="Valor Inválido",
                         error="El valor debe ser uno de los seleccionados en la lista.")
 
-    for row in ws['C2:C11']:  # Solo para Pregunta 2 (Columna C)
+    for row in ws['E2:E11']:  # Solo para Pregunta 2 (Columna C)
         for cell in row:
             dv2.add(cell)
 
     # Crear lógica para preguntas que acepten fracciones (P3)
     dv3 = DataValidation(type="custom",
-                        formula1='=AND(ISNUMBER(VALUE(LEFT(D2,FIND("/",D2)-1))),ISNUMBER(VALUE(MID(D2,FIND("/",D2)+1,LEN(D2)-FIND("/",D2)))),COUNTIF(D2,"*/?*")=1)',
+                        formula1='=AND(ISNUMBER(VALUE(LEFT(F2,FIND("/",F2)-1))),ISNUMBER(VALUE(MID(F2,FIND("/",F2)+1,LEN(F2)-FIND("/",F2)))),COUNTIF(F2,"*/?*")=1)',
                         showErrorMessage=True,
                         error="Solo se permiten fracciones en formato numerador/denominador, ej: 1/2",
                         errorTitle="Entrada inválida")
 
-    for row in ws['D2:D11']:  # Solo para Pregunta 3 (Columna D)
+    for row in ws['F2:F11']:  # Solo para Pregunta 3 (Columna D)
         for cell in row:
             dv3.add(cell)
             cell.number_format = '@'  # Formato de texto
@@ -61,7 +87,7 @@ def inicializar_hoja(ws):
                         errorTitle="Valor Inválido",
                         error="El valor debe ser uno de los seleccionados en la lista.")
 
-    for row in ws['E2:E11']:  # Solo para Pregunta 4 (Columna E)
+    for row in ws['G2:G11']:  # Solo para Pregunta 4 (Columna E)
         for cell in row:
             dv4.add(cell)
 
@@ -72,7 +98,7 @@ def inicializar_hoja(ws):
                         error="Solo se permiten valores en formato de par ordenado, ej: X;Y",
                         errorTitle="Entrada inválida")
     
-    for row in ws['G2:G11']:
+    for row in ws['I2:I11']:
         for cell in row:
             dv6.add(cell)
             cell.number_format = '@'  # Formato de texto
@@ -98,14 +124,14 @@ wb = Workbook()
 # Inicializar la hoja principal
 ws_preguntas = wb.active
 ws_preguntas.title = 'Preguntas'
-inicializar_hoja(ws_preguntas)
+inicializar_hoja(ws_preguntas, r"C:\Users\joaquin.rodriguezm\Desktop\config.txt")
 
 # Asignar estilos a la hoja de preguntas
 
 start_row = 1
 end_row = 11
 start_column = 1  # Columna A
-end_column = 8    # Columna H
+end_column = 9    # Columna H
 
 sheet = ws_preguntas
 
@@ -118,14 +144,11 @@ for row in sheet.iter_rows(min_row=start_row, max_row=end_row, min_col=start_col
     for cell in row:
         cell.border = border
 
-ws_preguntas.column_dimensions['F'].width = 40 
-ws_preguntas.column_dimensions['H'].width = 53
-
+ws_preguntas.column_dimensions['H'].width = 40
 # Crear e inicializar una nueva hoja
-ws_respuestas = wb.create_sheet(title='Respuestas')
-inicializar_hoja(ws_respuestas)
+ws_respuestas = wb.create_sheet(title='Respuestas') 
+inicializar_hoja(ws_respuestas, r"C:\Users\joaquin.rodriguezm\Desktop\config.txt")
 #ws_respuestas.protection.sheet = True
-ws_respuestas.column_dimensions['H'].width = 29
 
 # Referenciar los datos de B2:E11 en la hoja 'Respuestas', pero dejando vacía si la celda original está vacía
 for i in range(2, 12):
@@ -142,46 +165,14 @@ for i in range(2, 12):
 
 # Referenciar los datos de K1:K10 en la hoja 'Datos' a F2:F11 en la hoja 'Respuestas'
 for i in range(2, 12):
-    cell_respuesta = ws_respuestas.cell(row=i, column=6)  
+    cell_respuesta = ws_respuestas.cell(row=i, column=8) 
     cell_dato = ws_preguntas.cell(row=i-1, column=11)  
     cell_respuesta.value = f"=Datos!K{i-1}"
 
-# Referenciar los valores de T2:T11 en la hoja 'Datos' a H2:H11 en la hoja 'Respuestas'
-for row in range(2, 12):
-    ws_respuestas[f'H{row}'] = f'=Datos!T{row}'
 
 # Crear la hoja de Datos
 ws_datos = wb.create_sheet(title='Datos')
-# ws_datos.sheet_state = 'veryHidden'
-for i in range(2, 12):
-        cell = ws_datos[f'M{i}']
-        cell.value = f'Alumno{i-1}'
-
-ws_datos['N1'] = 'Pregunta7'
-ws_datos['Q1'] = 'VELOCIDAD'
-ws_datos['R1'] = 'PRECISION'
-ws_datos['S1'] = 'EXPRESION'
-
-# Se define rango de filas para insertar fórmula para valores de los radio buttons
-# Para posteriormente concatenar los valores y que queden como una sola expresión
-
-for row in range(2, 12):
-    ws_datos[f'Q{row}'] = f'=IF(N{row}=1, "NIVEL D", IF(N{row}=2, "NIVEL C", IF(N{row}=3, "NIVEL B", IF(N{row}=4, "NIVEL A", ""))))'
-
-for row in range(2, 12): 
-    ws_datos[f'R{row}'] = f'=IF(O{row}=1, "NIVEL B", IF(O{row}=2, "NIVEL A", ""))'
-
-
-for row in range(2, 12):
-    ws_datos[f'S{row}'] = f'=IF(P{row}=1, "NIVEL D", IF(P{row}=2, "NIVEL B", IF(P{row}=3, "NIVEL A", "")))'
-
-for row in range(2, 12):
-    ws_datos[f'T{row}'] = (
-        f'=IF(Q{row}<>"", Q{row} & ";", "") & '
-        f'IF(R{row}<>"", IF(Q{row}<>"", R{row} & ";", R{row} & ";"), "") & '
-        f'IF(S{row}<>"", IF(OR(Q{row}<>"", R{row}<>""), S{row}, ";" & S{row}), "")'
-    )
-
+ws_datos.sheet_state = 'veryHidden'
 
 # Guardar el archivo Excel
 file_path = r'C:\Users\joaquin.rodriguezm\Desktop\cfgPrueba.xlsx'
@@ -222,7 +213,7 @@ excel = win32com.client.Dispatch("Excel.Application")
 libro = excel.Workbooks.Open(ruta_archivo)
 
 # Código de la macro que deseas agregar
-codigo_checkboxes = """
+codigo_checkboxes = '''
 Sub AddCheckBoxes()
     Dim ws As Worksheet
     Dim wsLinks As Worksheet
@@ -240,10 +231,10 @@ Sub AddCheckBoxes()
     ' Etiquetas para los checkboxes
     labels = Array("OP1", "OP2", "OP3", "OP4", "OP5")
     
-    ' Crear los checkboxes en el rango F2:F11 
+    ' Crear los checkboxes en el rango H2:H11 
     For i = 2 To 11
-        topPos = ws.Cells(i, 6).Top
-        leftPos = ws.Cells(i, 6).Left
+        topPos = ws.Cells(i, 8).Top  ' Cambiado a columna H (8)
+        leftPos = ws.Cells(i, 8).Left  ' Cambiado a columna H (8)
         
         ' Crear CheckBoxes para cada celda en el rango
         For j = LBound(labels) To UBound(labels)
@@ -257,162 +248,328 @@ Sub AddCheckBoxes()
         Next j
     Next i
     
-    ' Convertir los valores VERDADERO/FALSO en 1/0 en las celdas F1:J10
+    ' Convertir los valores VERDADERO/FALSO en 1/0 en las celdas H1:L10
     For i = 1 To 10
         For j = 1 To 5
             wsLinks.Cells(i, j + 5).Formula = "=IF(" & wsLinks.Cells(i, j).Address & ",1,0)"
         Next j
         
-        ' Concatenar los valores en la columna K
+        ' Concatenar los valores en la columna K (mantener concatenación en K)
         wsLinks.Cells(i, 11).Formula = "=" & wsLinks.Cells(i, 6).Address & "&" & wsLinks.Cells(i, 7).Address & "&" & wsLinks.Cells(i, 8).Address & "&" & wsLinks.Cells(i, 9).Address & "&" & wsLinks.Cells(i, 10).Address
     Next i
 End Sub
-"""
 
-codigo_radiobuttons = """
-Sub CrearRadioButtonsEnRango()
+'''
+
+codigo_radiobuttons = '''
+Sub CrearRadioButtonsRango()
     Dim ws As Worksheet
     Set ws = ActiveSheet
-    Dim wsDatos As Worksheet
-    Set wsDatos = ThisWorkbook.Sheets("Datos")
+    
+    ' Ruta del archivo de configuración
+    Dim rutaConfig As String
+    rutaConfig = "C:/Users/joaquin.rodriguezm/Desktop/config.txt"
+    
+    ' Leer archivo de configuración
+    Dim config As Object
+    Set config = CreateObject("Scripting.Dictionary")
+    Call LeerArchivoConfiguracion(rutaConfig, config)
+    
+    ' Recorrer todos los rangos definidos en el archivo de configuración
+    Dim clave As Variant
+    Dim rangoCounter As Integer
+    rangoCounter = 1
 
-    ' Definir el rango H2:H11
-    Dim celda As Range, linkedCell As Range
-    For Each celda In ws.Range("H2:H11")
+    For Each clave In config.Keys
+        If InStr(clave, "rango") > 0 Then
+            Dim rango As String
+            rango = config(clave)
+            
+            ' Crear una nueva hoja para cada rango
+            Dim wsDatos As Worksheet
+            Set wsDatos = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+            wsDatos.Name = "Vinculaciones_Rango" & rangoCounter ' Nombre único para cada hoja
+            rangoCounter = rangoCounter + 1
+            
+            ' Obtener las palabras y el número de botones para este rango
+            Dim palabra1 As String, palabra2 As String, palabra3 As String
+            Dim btnPalabra1 As Integer, btnPalabra2 As Integer, btnPalabra3 As Integer
+            Dim nivelesPalabra1 As String, nivelesPalabra2 As String, nivelesPalabra3 As String
+            
+            ' Leer las palabras y el número de botones desde la configuración
+            palabra1 = config("palabra" & rangoCounter - 1 & "1")
+            palabra2 = config("palabra" & rangoCounter - 1 & "2")
+            palabra3 = config("palabra" & rangoCounter - 1 & "3")
+            btnPalabra1 = config("btnPalabra" & rangoCounter - 1 & "1")
+            btnPalabra2 = config("btnPalabra" & rangoCounter - 1 & "2")
+            btnPalabra3 = config("btnPalabra" & rangoCounter - 1 & "3")
+            nivelesPalabra1 = config("nivelesPalabra" & rangoCounter - 1 & "1")
+            nivelesPalabra2 = config("nivelesPalabra" & rangoCounter - 1 & "2")
+            nivelesPalabra3 = config("nivelesPalabra" & rangoCounter - 1 & "3")
+            
+            ' Aplicar la lógica de creación de controles para cada rango
+            Dim celda As Range, linkedCell As Range
+            For Each celda In ws.Range(rango)
 
-        ' Determinar la celda vinculada en la hoja 'Datos'
-        Set linkedCell = wsDatos.Cells(celda.Row - 1 + 1, 14) ' N2 corresponde a la fila 2 y columna 14 (N)
+                celda.ColumnWidth = 53
 
-        ' Colocar texto en la celda actual
-        celda.Value = Chr(10) & Chr(10) & "VELOCIDAD" & Chr(10) & "" & Chr(10) & "PRECISION" & Chr(10) & "" & Chr(10) & "EXPRESION" & Chr(10) & ""
+                With celda.Borders
+                    .LineStyle = xlContinuous
+                    .Weight = xlThin
+                End With
 
-        ' Ajustes de posicionamiento
-        Dim top_offset As Integer
-        Dim left_offset As Integer
-        top_offset = celda.Top + 15
-        left_offset = celda.Left + 60
+                ' Vincular a celdas en la nueva hoja creada para este rango
+                Set linkedCell = wsDatos.Cells(celda.Row, 2) ' Usar la columna B en la nueva hoja
+                
+                ' Colocar texto en la celda
+                celda.Value = Chr(10) & Chr(10) & palabra1 & Chr(10) & "" & Chr(10) & palabra2 & Chr(10) & "" & Chr(10) & palabra3 & Chr(10) & ""
+                
+                ' Ajustes de posicionamiento
+                Dim top_offset As Integer
+                Dim left_offset As Integer
+                top_offset = celda.Top + 15
+                left_offset = celda.Left + 60
+                
+                ' Posiciones ajustadas para los controles
+                Dim posicionesY(1 To 3) As Integer
+                posicionesY(1) = top_offset + 13    ' Ajuste para Palabra 1 (Velocidad)
+                posicionesY(2) = top_offset + 43    ' Ajuste para Palabra 2 (Precisión)
+                posicionesY(3) = top_offset + 70    ' Ajuste para Palabra 3 (Expresión)
 
-        ' Ajustes finos de las posiciones verticales para alineación con palabras
-        Dim posicionesY(1 To 3) As Integer
-        posicionesY(1) = top_offset + 13    ' Ajuste para VELOCIDAD
-        posicionesY(2) = top_offset + 43    ' Ajuste para PRECISION
-        posicionesY(3) = top_offset + 70    ' Ajuste para EXPRESION
-
-        ' Crear un GroupBox para VELOCIDAD
-        Dim groupBoxV As Object
-        Set groupBoxV = ws.GroupBoxes.Add(left_offset - 10, posicionesY(1) - 10, 250, 50)
-        groupBoxV.Caption = "VELOCIDAD"
-        groupBoxV.Visible = False ' Hacer el GroupBox invisible
-
-        ' Crear los radio buttons para VELOCIDAD
-        Dim j As Integer
-        For j = 1 To 4
-            Dim optButtonV As Object
-            Set optButtonV = ws.OptionButtons.Add(left_offset + ((j - 1) * 60), posicionesY(1), 60, 15)
-            Select Case j
-                Case 1: optButtonV.Caption = "NIVEL D": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
-                Case 2: optButtonV.Caption = "NIVEL C": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
-                Case 3: optButtonV.Caption = "NIVEL B": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
-                Case 4: optButtonV.Caption = "NIVEL A": optButtonV.LinkedCell = linkedCell.Offset(0, 0).Address(External:=True)
-            End Select
-        Next j
-
-        ' Crear un Checkbox para PRECISIÓN
-        Dim checkBoxP As Object
-        Set checkBoxP = ws.CheckBoxes.Add(left_offset + 62, posicionesY(2) - 50, 70, 15)
-        checkBoxP.Caption = "NO APLICA" ' Texto del checkbox
-        checkBoxP.Name = "CheckBox_" & celda.Row ' Asignar un nombre único al checkbox
-        checkBoxP.OnAction = "BloquearOpcionesPorCheckbox"
-
-        ' Crear un GroupBox para PRECISIÓN
-        Dim groupBoxP As Object
-        Set groupBoxP = ws.GroupBoxes.Add(left_offset - 10, posicionesY(2) - 10, 150, 50)
-        groupBoxP.Caption = "PRECISIÓN"
-        groupBoxP.Visible = False ' Hacer el GroupBox invisible
-
-        ' Crear los radio buttons para PRECISION
-        For j = 1 To 2
-            Dim optButtonP As Object
-            Set optButtonP = ws.OptionButtons.Add(left_offset + ((j - 1) * 60), posicionesY(2), 60, 15)
-            Select Case j
-                Case 1: optButtonP.Caption = "NIVEL B": optButtonP.LinkedCell = linkedCell.Offset(0, 1).Address(External:=True)
-                Case 2: optButtonP.Caption = "NIVEL A": optButtonP.LinkedCell = linkedCell.Offset(0, 1).Address(External:=True)
-            End Select
-        Next j
-
-        ' Crear un GroupBox para EXPRESIÓN
-        Dim groupBoxE As Object
-        Set groupBoxE = ws.GroupBoxes.Add(left_offset - 10, posicionesY(3) - 10, 250, 50)
-        groupBoxE.Caption = "EXPRESIÓN"
-        groupBoxE.Visible = False ' Hacer el GroupBox invisible
-
-        ' Crear los radio buttons para EXPRESION
-        For j = 1 To 3
-            Dim optButtonE As Object
-            Set optButtonE = ws.OptionButtons.Add(left_offset + ((j - 1) * 60), posicionesY(3), 60, 15)
-            Select Case j
-                Case 1: optButtonE.Caption = "NIVEL D": optButtonE.LinkedCell = linkedCell.Offset(0, 2).Address(External:=True)
-                Case 2: optButtonE.Caption = "NIVEL B": optButtonE.LinkedCell = linkedCell.Offset(0, 2).Address(External:=True)
-                Case 3: optButtonE.Caption = "NIVEL A": optButtonE.LinkedCell = linkedCell.Offset(0, 2).Address(External:=True)
-            End Select
-        Next j
-
-    Next celda
+                ' Crear Checkbox con nombre único
+                Dim checkBoxP As Object
+                Set checkBoxP = ws.CheckBoxes.Add(left_offset + 62, posicionesY(2) - 50, 70, 15)
+                checkBoxP.Caption = "NO APLICA"
+                checkBoxP.Name = "CheckBox" & celda.Address(False, False) ' Nombre único basado en la celda (e.g. CheckBoxH2)
+                checkBoxP.OnAction = "BloquearOpcionesPorCheckbox"
+                
+                ' Crear GroupBox y OptionButtons para cada palabra
+                Call CrearRadioButtons(ws, linkedCell, left_offset, posicionesY(1), palabra1, btnPalabra1, nivelesPalabra1, 0)
+                Call CrearRadioButtons(ws, linkedCell, left_offset, posicionesY(2), palabra2, btnPalabra2, nivelesPalabra2, 1)
+                Call CrearRadioButtons(ws, linkedCell, left_offset, posicionesY(3), palabra3, btnPalabra3, nivelesPalabra3, 2)
+            Next celda
+        End If
+    Next clave
 End Sub
-"""
 
-codigo_bloqueo = """
+' Subrutina para crear RadioButtons
+Sub CrearRadioButtons(ws As Worksheet, linkedCell As Range, left_offset As Integer, top_offset As Integer, palabra As String, numBotones As Integer, niveles As String, offsetCol As Integer)
+    Dim groupBox As Object
+    Set groupBox = ws.GroupBoxes.Add(left_offset - 10, top_offset - 10, 250, 50)
+    groupBox.Caption = palabra
+    groupBox.Visible = False ' Ocultar GroupBox
+
+    Dim j As Integer
+
+    For j = 1 To numBotones
+        Dim optButton As Object
+        Set optButton = ws.OptionButtons.Add(left_offset + ((j - 1) * 60), top_offset, 60, 15)
+
+        ' Asignar el nivel (letra) con el prefijo "NIVEL "
+        If j <= Len(niveles) Then
+            optButton.Caption = "NIVEL " & Mid(niveles, j, 1) ' Obtener el carácter j de la cadena de niveles
+        Else
+            optButton.Caption = "NIVEL " & j ' Asignar un nombre genérico si no hay más niveles
+        End If
+        
+        ' Ajustar el offsetCol para usar las columnas C, D y E 
+        optButton.LinkedCell = linkedCell.Offset(0, offsetCol + 1).Address(External:=True)
+    Next j
+End Sub
+
+' Función para leer el archivo de configuración
+Sub LeerArchivoConfiguracion(rutaConfig As String, ByRef config As Object)
+    Dim fileNum As Integer
+    Dim line As String
+    fileNum = FreeFile
+
+    Open rutaConfig For Input As fileNum
+    Do Until EOF(fileNum)
+        Line Input #fileNum, line
+        If InStr(line, "=") > 0 Then
+            Dim clave As String, valor As String
+            clave = Trim(Left(line, InStr(line, "=") - 1))
+            valor = Trim(Mid(line, InStr(line, "=") + 1))
+            config(clave) = valor
+        End If
+    Loop
+    Close fileNum
+End Sub
+
+'''
+
+codigo_bloqueo = '''
 Sub BloquearOpcionesPorCheckbox()
     Dim wsPreguntas As Worksheet
     Dim wsRespuestas As Worksheet
-    Dim wsDatos As Worksheet
+    Dim fila As Integer
+    Dim col As Integer
+    Dim checkEstado As Boolean
+    Dim checkBoxName As String
+    Dim celda As Range
+    Dim optButton As Object
+    Dim config As Object
+    Dim rango As String
+    Dim clave As Variant
+    Dim rangoCounter As Integer
+    Dim wsVinculaciones As Worksheet
+
+    Application.ScreenUpdating = False
+
     Set wsPreguntas = ThisWorkbook.Sheets("Preguntas")
     Set wsRespuestas = ThisWorkbook.Sheets("Respuestas")
-    Set wsDatos = ThisWorkbook.Sheets("Datos")
 
-    ' Definir el rango de checkboxes
-    Dim fila As Integer
-    Dim checkEstado As Boolean
-    
-    ' Iterar sobre las celdas en el rango H2:H11
-    Dim celda As Range
-    For Each celda In wsPreguntas.Range("H2:H11")
-        ' Obtener el estado del checkbox asociado con la celda actual
-        checkEstado = (wsPreguntas.CheckBoxes("CheckBox_" & celda.Row).Value = 1)
+    ' Leer archivo de configuración
+    Set config = CreateObject("Scripting.Dictionary")
+    Call LeerArchivoConfiguracion("C:/Users/joaquin.rodriguezm/Desktop/config.txt", config)
 
-        ' Obtener la fila actual
-        fila = celda.Row
-        
-        ' Bloquear o desbloquear botones de opción en la fila correspondiente
-        Dim optButton As Object
-        For Each optButton In wsPreguntas.OptionButtons
-            If optButton.TopLeftCell.Row = fila Then
-                ' Desmarcar el botón si el checkbox está marcado
-                If checkEstado Then
-                    optButton.Value = xlOff  ' Desmarcar el botón
-                End If
-                optButton.Enabled = Not checkEstado  ' Bloquear o desbloquear
+    ' Iterar sobre los rangos definidos en el archivo de configuración
+    For Each clave In config.Keys
+        If InStr(clave, "rango") > 0 Then
+            rango = config(clave)
+            rangoCounter = Mid(clave, 6) ' Obtener el número del rango (ej: "1", "2", etc.)
+            
+            ' Establecer la hoja correspondiente al rango
+            On Error Resume Next
+            Set wsVinculaciones = ThisWorkbook.Sheets("Vinculaciones_Rango" & rangoCounter)
+            On Error GoTo 0
+            
+            ' Asegurarse de que la hoja de vinculaciones existe
+            If wsVinculaciones Is Nothing Then
+                MsgBox "La hoja 'Vinculaciones_Rango" & rangoCounter & "' no existe.", vbExclamation
+                Exit Sub
             End If
-        Next optButton
-        
-        ' Si el checkbox está marcado, escribir "NO APLICA;NO APLICA;NO APLICA" en la hoja Respuestas
-        If checkEstado Then
-            wsRespuestas.Cells(fila, "H").Value = "NO APLICA;NO APLICA;NO APLICA"
-        Else
-            ' Si el checkbox está desmarcado, establecer la fórmula para que referencie la hoja Datos
-            wsRespuestas.Cells(fila, "H").Formula = "=Datos!T" & fila
+            
+            For Each celda In wsPreguntas.Range(rango)
+                fila = celda.Row
+                col = celda.Column  ' Obtenemos la columna de la celda actual
+                
+                ' Crear el nombre del checkbox basado en la celda actual
+                checkBoxName = "CheckBox" & celda.Address(False, False)
+
+                ' Verificar el estado del checkbox correspondiente a esta celda
+                On Error Resume Next ' Manejo de errores para checkboxes
+                checkEstado = (wsPreguntas.CheckBoxes(checkBoxName).Value = 1)
+                On Error GoTo 0
+
+                ' Recorrer todos los OptionButtons para esta fila
+                For Each optButton In wsPreguntas.OptionButtons
+                    ' Verificar si el OptionButton está en la misma fila y columna
+                    If optButton.TopLeftCell.Row = fila And optButton.TopLeftCell.Column = celda.Column Then
+                        ' Si el checkbox está marcado, desmarcar y deshabilitar solo los OptionButtons en la misma fila
+                        If checkEstado Then
+                            optButton.Value = xlOff   ' Desmarcar el botón
+                            optButton.Enabled = False  ' Deshabilitar el botón
+                        Else
+                            optButton.Enabled = True   ' Habilitar el botón si el checkbox no está marcado
+                        End If
+                    End If
+                Next optButton
+
+                ' Si el checkbox está marcado, escribir "NO APLICA" en la misma celda de la hoja Respuestas
+                If checkEstado Then
+                    wsRespuestas.Cells(fila, col).Value = "NO APLICA;NO APLICA;NO APLICA"
+                Else
+                    ' Aquí se coloca la fórmula que vincula a la celda correspondiente en Vinculaciones
+                    wsRespuestas.Cells(fila, col).Formula = "='Vinculaciones_Rango" & rangoCounter & "'!" & wsVinculaciones.Cells(fila, 2).Address
+                End If
+            Next celda
         End If
-    Next celda
+    Next clave
+
+    Application.ScreenUpdating = True
+End Sub
+
+'''
+
+codigo_formulas = '''
+Sub InsertarFormulasEnRango()
+    Dim ws As Worksheet
+    Dim config As Object
+    Dim niveles As String
+    Dim formula As String
+    Dim i As Integer
+    Dim j As Integer
+    Dim colRef As String
+    Dim palabraClave As String
+    Dim rangoCounter As Integer
+
+    ' Leer archivo de configuración
+    Set config = CreateObject("Scripting.Dictionary")
+    Call LeerArchivoConfiguracion("C:/Users/joaquin.rodriguezm/Desktop/config.txt", config)
+
+    ' Iterar sobre los rangos definidos en el archivo de configuración
+    rangoCounter = 1
+    Do While config.Exists("rango" & rangoCounter)
+        ' Establecer la hoja correspondiente al rango
+        On Error Resume Next
+        Set ws = ThisWorkbook.Sheets("Vinculaciones_Rango" & rangoCounter)
+        On Error GoTo 0
+
+        ' Comprobar si la hoja existe
+        If Not ws Is Nothing Then
+            ' Crear y establecer la fórmula celda por celda en el rango correspondiente
+            For i = 2 To 11  ' Fila 2 a 11
+                For j = 1 To 3  ' Para las palabras en columnas C (1), D (2), E (3)
+                    ' Determinar la palabra clave según el rango y la posición
+                    palabraClave = "nivelesPalabra" & rangoCounter & j
+                    
+                    ' Establecer las columnas de referencia
+                    colRef = Chr(67 + j - 1) ' C, D, E (67 es la letra ASCII de 'C')
+
+                    ' Verificar que la clave de niveles existe en el archivo de configuración
+                    If config.Exists(palabraClave) Then
+                        niveles = config(palabraClave)
+
+                        ' Construir la fórmula de forma dinámica según los niveles
+                        Select Case Len(niveles)
+                            Case 2
+                                formula = "=IF(" & colRef & i & "=1, ""NIVEL " & Mid(niveles, 1, 1) & """, IF(" & colRef & i & "=2, ""NIVEL " & Mid(niveles, 2, 1) & """, """"))"
+                            Case 3
+                                formula = "=IF(" & colRef & i & "=1, ""NIVEL " & Mid(niveles, 1, 1) & """, IF(" & colRef & i & "=2, ""NIVEL " & Mid(niveles, 2, 1) & """, IF(" & colRef & i & "=3, ""NIVEL " & Mid(niveles, 3, 1) & """, """")))"
+                            Case 4
+                                formula = "=IF(" & colRef & i & "=1, ""NIVEL " & Mid(niveles, 1, 1) & """, IF(" & colRef & i & "=2, ""NIVEL " & Mid(niveles, 2, 1) & """, IF(" & colRef & i & "=3, ""NIVEL " & Mid(niveles, 3, 1) & """, IF(" & colRef & i & "=4, ""NIVEL " & Mid(niveles, 4, 1) & """, """"))))"
+                            ' Agregar más casos si es necesario
+                        End Select
+
+                        ' Insertar la fórmula celda por celda en la celda correspondiente, comenzando desde la columna F
+                        ws.Cells(i, 6 + j - 1).Formula = formula ' Se ajusta a 6 + j para que empiece en F
+                    Else
+                        ' Si no existe la clave, podrías querer establecer un valor predeterminado o dejar la celda en blanco
+                        ws.Cells(i, 6 + j).Value = "" ' O bien, puedes establecer un valor predeterminado aquí
+                    End If
+                Next j
+
+                Dim concatFormula As String
+
+                ' Crear fórmula para concatenar solo si las celdas no están vacías
+                concatFormula = "=IF(F" & i & "<>"""", F" & i & ", """") & IF(AND(F" & i & "<>"""", G" & i & "<>""""), "";"" , """") & " & _
+                "IF(G" & i & "<>"""", G" & i & ", """") & IF(AND(G" & i & "<>"""", H" & i & "<>""""), "";"" , """") & " & _
+                "IF(H" & i & "<>"""", H" & i & ", """")"
+
+
+                ' Insertar la fórmula concatenada en la columna B
+                ws.Cells(i, 2).formula = concatFormula
+
+                ' Ajustar el ancho de la columna B para que se ajusten todos los valores
+                ws.Columns("B").ColumnWidth = 22
+
+            Next i
+        End If
+
+        rangoCounter = rangoCounter + 1
+    Loop
 End Sub
 
 
-
-"""
+'''
 
 codigo_evento = '''
 Private Sub Workbook_Open()
     AddCheckBoxes
-    CrearRadioButtonsEnRango
+    CrearRadioButtonsRango
+    InsertarFormulasEnRango
+    BloquearOpcionesPorCheckbox
 End Sub
 '''
 # Agregar la macro al módulo de código
@@ -429,6 +586,10 @@ try:
     modulo = libro.VBProject.VBComponents.Add(1)  # 1 para módulo estándar
     modulo.Name = "ModuloBloqueo"  # Nombre del módulo
     modulo.CodeModule.AddFromString(codigo_bloqueo)  # Agregar el código de la macro
+
+    modulo = libro.VBProject.VBComponents.Add(1)  # 1 para módulo estándar
+    modulo.Name = "ModuloFormulas"  # Nombre del módulo
+    modulo.CodeModule.AddFromString(codigo_formulas)  # Agregar el código de la macro
 
     ThisWorkbook = libro.VBProject.VBComponents("ThisWorkbook")
     ThisWorkbook.CodeModule.AddFromString(codigo_evento)
