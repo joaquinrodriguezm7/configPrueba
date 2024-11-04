@@ -11,7 +11,7 @@ def leer_configuracion(archivo_config):
         for linea in f:
             if '=' in linea:
                 clave, valor = linea.strip().split('=')
-                config[clave.strip()] = valor.strip().split(', ')
+                config[clave.strip()] = valor.strip().split(' | ')
     return config
 
 def inicializar_hoja(ws, archivo_config):
@@ -93,7 +93,7 @@ def inicializar_hoja(ws, archivo_config):
 
     # Crear lógica para preguntas que acepten pares ordenados (P6)
     dv6 = DataValidation(type="custom",
-                        formula1='=AND(ISNUMBER(VALUE(LEFT(G2,FIND(";",G2)-1))),ISNUMBER(VALUE(MID(G2,FIND(";",G2)+1,LEN(G2)-FIND(";",G2)))),COUNTIF(G2,"*;?*")=1)',
+                        formula1='=AND(ISNUMBER(VALUE(LEFT(I2,FIND(";",I2)-1))),ISNUMBER(VALUE(MID(I2,FIND(";",I2)+1,LEN(I2)-FIND(";",I2)))),COUNTIF(I2,"*;?*")=1)',
                         showErrorMessage=True,
                         error="Solo se permiten valores en formato de par ordenado, ej: X;Y",
                         errorTitle="Entrada inválida")
@@ -152,15 +152,15 @@ inicializar_hoja(ws_respuestas, r"C:\Users\joaquin.rodriguezm\Desktop\config.txt
 
 # Referenciar los datos de B2:E11 en la hoja 'Respuestas', pero dejando vacía si la celda original está vacía
 for i in range(2, 12):
-    for j in range(2, 6):
+    for j in range(4, 8):
         cell_respuesta = ws_respuestas.cell(row=i, column=j)
         cell_pregunta = ws_preguntas.cell(row=i, column=j)
         cell_respuesta.value = f'=IF(Preguntas!{cell_pregunta.coordinate}="","",Preguntas!{cell_pregunta.coordinate})'
 
 # Referenciar los datos de la Pregunta 6 (columna G) en la hoja 'Respuestas'
 for i in range(2, 12):
-    cell_respuesta = ws_respuestas.cell(row=i, column=7)
-    cell_pregunta = ws_preguntas.cell(row=i, column=7)
+    cell_respuesta = ws_respuestas.cell(row=i, column=9)
+    cell_pregunta = ws_preguntas.cell(row=i, column=9)
     cell_respuesta.value = f'=IF(Preguntas!{cell_pregunta.coordinate}="","", "("&Preguntas!{cell_pregunta.coordinate}&")")'
 
 # Referenciar los datos de K1:K10 en la hoja 'Datos' a F2:F11 en la hoja 'Respuestas'
