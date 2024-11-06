@@ -45,7 +45,9 @@ def inicializar_hoja(ws, archivo_config):
 
 
     # Crear lógica para preguntas que acepten enteros y decimales, incluyendo negativos (P1)
-    dv1 = DataValidation(type="decimal",
+    rng_enteros = config.get('rng_enteros', [])
+    
+    dv_enteros = DataValidation(type="decimal",
                         operator="between",
                         formula1=None,
                         formula2=None,
@@ -53,62 +55,94 @@ def inicializar_hoja(ws, archivo_config):
                         errorTitle="Entrada inválida",
                         error="Solo se permiten números enteros o decimales con separador ','")
 
-    for row in ws['D2:D11']:  # Solo para Pregunta 1 (Columna B)
-        for cell in row:
-            dv1.add(cell)
+    for rango in rng_enteros:
+        for row in ws[rango]:
+            for cell in row:
+                dv_enteros.add(cell)
 
     # Crear lista desplegable para preguntas abiertas simples (P2)
-    dv2 = DataValidation(type="list",
+    rng_abierta_simple = config.get('rng_abierta_simple', [])
+    
+    dv_abierta_simple = DataValidation(type="list",
                         formula1='"0,1,2"',
                         showErrorMessage=True,
                         errorTitle="Valor Inválido",
                         error="El valor debe ser uno de los seleccionados en la lista.")
 
-    for row in ws['E2:E11']:  # Solo para Pregunta 2 (Columna C)
-        for cell in row:
-            dv2.add(cell)
+    for rango in rng_abierta_simple:
+        for row in ws[rango]:
+            for cell in row:
+                dv_abierta_simple.add(cell)
 
     # Crear lógica para preguntas que acepten fracciones (P3)
-    dv3 = DataValidation(type="custom",
-                        formula1='=AND(ISNUMBER(VALUE(LEFT(F2,FIND("/",F2)-1))),ISNUMBER(VALUE(MID(F2,FIND("/",F2)+1,LEN(F2)-FIND("/",F2)))),COUNTIF(F2,"*/?*")=1)',
-                        showErrorMessage=True,
-                        error="Solo se permiten fracciones en formato numerador/denominador, ej: 1/2",
-                        errorTitle="Entrada inválida")
+    rng_fracciones = config.get('rng_fracciones', [])
 
-    for row in ws['F2:F11']:  # Solo para Pregunta 3 (Columna D)
-        for cell in row:
-            dv3.add(cell)
-            cell.number_format = '@'  # Formato de texto
+# Crear la validación de datos para las fracciones
+    dv_fracciones = DataValidation(
+        type="custom",
+        formula1='=AND(ISNUMBER(VALUE(LEFT(A1,FIND("/",A1)-1))),ISNUMBER(VALUE(MID(A1,FIND("/",A1)+1,LEN(A1)-FIND("/",A1)))),COUNTIF(A1,"*/?*")=1)',
+        showErrorMessage=True,
+        error="Solo se permiten fracciones en formato numerador/denominador, ej: 1/2",
+        errorTitle="Entrada inválida"
+    )
+
+# Agregar la validación de datos al worksheet (fuera del bucle)
+    ws.add_data_validation(dv_fracciones)
+
+# Iterar sobre los rangos y aplicar la validación a las celdas
+    for rango in rng_fracciones:
+        for row in ws[rango]:
+            for cell in row:
+            # Ajustar la fórmula para cada celda utilizando la referencia de la celda actual
+                dv_fracciones.formula1 = dv_fracciones.formula1.replace('A1', cell.coordinate)
+                dv_fracciones.add(cell)
+                cell.number_format = '@'  # Formato de texto
+                
+
 
     # Crear lista desplegable para preguntas de selección única (P4)
-    dv4 = DataValidation(type="list",
+    rng_seleccion_unica = config.get('rng_seleccion_unica', [])
+    
+    dv_seleccion_unica = DataValidation(type="list",
                         formula1='"A, B, C, D, N, N/C"',
                         showErrorMessage=True,
                         errorTitle="Valor Inválido",
                         error="El valor debe ser uno de los seleccionados en la lista.")
 
-    for row in ws['G2:G11']:  # Solo para Pregunta 4 (Columna E)
-        for cell in row:
-            dv4.add(cell)
+    for rango in rng_seleccion_unica:
+        for row in ws[rango]:
+            for cell in row:
+                dv_seleccion_unica.add(cell)
 
     # Crear lógica para preguntas que acepten pares ordenados (P6)
-    dv6 = DataValidation(type="custom",
-                        formula1='=AND(ISNUMBER(VALUE(LEFT(I2,FIND(";",I2)-1))),ISNUMBER(VALUE(MID(I2,FIND(";",I2)+1,LEN(I2)-FIND(";",I2)))),COUNTIF(I2,"*;?*")=1)',
-                        showErrorMessage=True,
-                        error="Solo se permiten valores en formato de par ordenado, ej: X;Y",
-                        errorTitle="Entrada inválida")
-    
-    for row in ws['I2:I11']:
-        for cell in row:
-            dv6.add(cell)
-            cell.number_format = '@'  # Formato de texto
+    rng_par_ordenado = config.get('rng_par_ordenado', [])
+
+# Crear la validación de datos, manteniendo la referencia genérica 'A1'
+    dv_par_ordenado = DataValidation(
+        type="custom",
+        formula1='=AND(ISNUMBER(VALUE(LEFT(A1,FIND(";",A1)-1))),ISNUMBER(VALUE(MID(A1,FIND(";",A1)+1,LEN(A1)-FIND(";",A1)))),COUNTIF(A1,"*;?*")=1)',
+        showErrorMessage=True,
+        error="Solo se permiten valores en formato de par ordenado, ej: X;Y",
+        errorTitle="Entrada inválida"
+    )
+
+# Agregar la validación de datos al worksheet (fuera del bucle)
+    ws.add_data_validation(dv_par_ordenado)
+
+# Iterar sobre los rangos y aplicar la validación a las celdas
+    for rango in rng_par_ordenado:
+        for row in ws[rango]:
+            for cell in row:
+            # Ajustar la fórmula para cada celda utilizando la referencia de la celda actual
+            # Nota: La fórmula se mantiene genérica y no cambia durante la iteración
+                dv_par_ordenado.formula1 = dv_par_ordenado.formula1.replace('A1', cell.coordinate)
+                dv_par_ordenado.add(cell)
+                cell.number_format = '@'  # Formato de texto
 
     # Agregar validaciones a la hoja
-    ws.add_data_validation(dv1)
-    ws.add_data_validation(dv2)
-    ws.add_data_validation(dv3)
-    ws.add_data_validation(dv4)
-    ws.add_data_validation(dv6)
+    ws.add_data_validation(dv_enteros)
+    ws.add_data_validation(dv_abierta_simple)
+    ws.add_data_validation(dv_seleccion_unica)
 
     # Desbloquear solo las celdas B2:H11 (Preguntas 1 a 6)
     for row in ws_preguntas['B2:H11']:

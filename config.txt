@@ -1,6 +1,12 @@
 alumnos=01 Alumno1 21331095-K 0001DX | 02 Alumno2 9293293-1 0002DX | 03 Alumno3 21208864-1 0003DX
 preguntas=Pregunta1 | Pregunta2 | Pregunta3 | Pregunta4 | Pregunta5 | Pregunta6 | Pregunta7 | Pregunta8
 
+rng_enteros = L2:L11 
+rng_abierta_simple = M2:M11 
+rng_fracciones = P2:P11 | Q2:Q11
+rng_seleccion_unica = D2:D11
+rng_par_ordenado = O2:O11 
+
 rango1 = J2:J11
 rango2 = K2:K11
 
